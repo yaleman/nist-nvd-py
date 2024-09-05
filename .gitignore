@@ -1,0 +1,17 @@
+.envrc
+
+.vscode/
+.DS_Store
+config.py
+dist/
+.env
+*.asc
+build/
+*.pyc
+*.egg-info/
+**/__pycache__/*
+.venv
+
+#example data
+example*.json
+tests/example*.json
