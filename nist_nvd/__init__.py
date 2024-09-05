@@ -325,7 +325,7 @@ class NVD:
         The API is updated whenever a new source is added, or an existing source is modified. Data sources change so infrequently that users interested in this information may choose to limit their requests to once per day.
         """
 
-        query: Dict[str, int | str | None] = {
+        query: Dict[str, str] = {
             "resultsPerPage": str(results_per_page),
             "startIndex": str(start_index),
         }
@@ -401,9 +401,9 @@ class NVD:
             }
         )
 
-        query: Dict[str, int | str | None] = {
-            "resultsPerPage": results_per_page,
-            "startIndex": start_index,
+        query: Dict[str, str] = {
+            "resultsPerPage": str(results_per_page),
+            "startIndex": str(start_index),
         }
         if last_mod_start_date is not None:
             query["lastModStartDate"] = last_mod_start_date.isoformat()
@@ -476,18 +476,18 @@ class NVD:
         if self.api_key is not None:
             headers["apiKey"] = self.api_key
 
-        query = {
-            "resultsPerPage": results_per_page,
-            "startIndex": start_index,
+        query: Dict[str, str] = {
+            "resultsPerPage": str(results_per_page),
+            "startIndex": str(start_index),
         }
         if last_mod_start_date is not None:
             query["lastModStartDate"] = last_mod_start_date.isoformat()
         if last_mod_end_date is not None:
             query["lastModEndDate"] = last_mod_end_date.isoformat()
         if pub_start_date is not None:
-            query["pubStartDate"] = last_mod_start_date.isoformat()
+            query["pubStartDate"] = pub_start_date.isoformat()
         if pub_end_date is not None:
-            query["pubEndDate"] = last_mod_end_date.isoformat()
+            query["pubEndDate"] = pub_end_date.isoformat()
         if source_identifier is not None:
             query["sourceIdentifier"] = source_identifier
         if cve_id is not None:
