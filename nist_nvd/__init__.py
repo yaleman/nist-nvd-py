@@ -1,8 +1,12 @@
 from datetime import datetime
+import logging
 from typing import Any, Dict, List, Optional
 
+from aiohttp import ClientTimeout
 from pydantic import UUID4, BaseModel, ConfigDict, Field, field_validator
 from aiohttp.client import ClientSession
+
+from .config import Config
 
 # https://nvd.nist.gov/developers/products
 CPES_URL = "https://services.nvd.nist.gov/rest/json/cpes/2.0"
@@ -35,6 +39,19 @@ class NVDResponse(BaseModel):
     version: str
     timestamp: datetime
     model_config = ConfigDict(extra="forbid")
+
+    def write_file(self, filename: str) -> None:
+        """Write the model to a JSON file, including None values"""
+        with open(filename, "w") as f:
+            logging.debug(f"writing to {filename}")
+            f.write(
+                self.model_dump_json(
+                    indent=4,
+                    exclude_none=False,
+                    exclude_unset=False,
+                    exclude_defaults=False,
+                )
+            )
 
 
 class NVDSource(BaseModel):
@@ -305,12 +322,20 @@ class NVD:
         self,
         api_key: Optional[str] = None,
         client_session: Optional[ClientSession] = None,
+        client_timeout: Optional[int] = None,
     ):
-        self.api_key = api_key
+        if api_key is None:
+            config = Config()  # type: ignore
+        else:
+            config = Config(api_key=api_key)
+        self.api_key = config.api_key
+
         if client_session is not None:
             self.client = client_session
         else:
-            self.client = ClientSession()
+            if client_timeout is None:
+                client_timeout = 60
+            self.client = ClientSession(timeout=ClientTimeout(client_timeout))
 
     async def get_sources(
         self,
@@ -592,7 +617,6 @@ class NVD:
                     )
                 )
             query["cvssV4Severity"] = cvss_v4_severity
-
         async with self.client.get(
             CVE_API_URL, headers=headers, params=query
         ) as response:
@@ -601,5 +625,4 @@ class NVD:
             try:
                 return NVDVulnerabilities.model_validate_json(text)
             except Exception as error:
-                # print(text)
                 raise error
