@@ -1,6 +1,7 @@
 from datetime import datetime
 import logging
-from typing import Any, Dict, List, Optional
+from pathlib import Path
+from typing import Any, Dict, List, Literal, Optional, Set, Union
 
 from aiohttp import ClientTimeout
 from pydantic import UUID4, BaseModel, ConfigDict, Field, field_validator
@@ -19,7 +20,26 @@ VALID_CVETAGS = ["disputed", "unsupported-when-assigned", "exclusively-hosted-se
 
 
 class WriteFileMixin:
-    def write_file(self, filename: str) -> None:
+    def model_dump_json(
+        self,
+        *,
+        indent: int | None = None,
+        include: Union[Set[int], Set[str], Dict[int, Any], Dict[str, Any], None] = None,
+        exclude: Union[Set[int], Set[str], Dict[int, Any], Dict[str, Any], None] = None,
+        context: Any | None = None,
+        by_alias: bool = False,
+        exclude_unset: bool = False,
+        exclude_defaults: bool = False,
+        exclude_none: bool = False,
+        round_trip: bool = False,
+        warnings: bool | Literal["none", "warn", "error"] = True,
+        serialize_as_any: bool = False,
+    ) -> str:
+        raise NotImplementedError(
+            "This method must be implemented in the subclass by pydantic.BaseModel"
+        )
+
+    def write_file(self, filename: str | Path) -> None:
         """Write the model to a JSON file, including None values"""
         with open(filename, "w") as f:
             logging.debug(f"writing to {filename}")
