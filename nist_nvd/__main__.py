@@ -1,6 +1,7 @@
 #!python
 
 import asyncio
+from pathlib import Path
 import sys
 from typing import Optional
 import click
@@ -29,9 +30,16 @@ async def async_main(
         res = await nvd.get_vulnerabilities(
             cve_id=cve_id, start_index=0, results_per_page=1
         )
-        filename = f"data/{cve_id}.json"
-        logger.debug(f"Saving to {filename}")
-        res.write_file(filename)
+        for vulnerability in res.vulnerabilities:
+            vuln_filename = Path(
+                "data/vulnerabilities/{}.json".format(vulnerability.cve.id)
+            )
+            if vuln_filename.exists():
+                logger.warning(f"File {vuln_filename} already exists, skipping")
+                continue
+            else:
+                vulnerability.cve.write_file(vuln_filename)
+                logger.debug(f"Wrote {vuln_filename}")
         logger.debug("Done!")
     elif all:
         possible_max_loops = (
@@ -49,9 +57,16 @@ async def async_main(
 
         while res:
             # write out the results, doing this for the "previous" run, which includes the initial run
-            filename = "data/{}".format(get_filename(start_index, results_per_page))
-            logger.debug(f"Saving to {filename}")
-            res.write_file(filename)
+            for vulnerability in res.vulnerabilities:
+                vuln_filename = Path(
+                    "data/vulnerabilities/{}.json".format(vulnerability.cve.id)
+                )
+                # if vuln_filename.exists():
+                # logger.debug(f"File {vuln_filename} already exists")
+                # continue
+                # else:
+                vulnerability.cve.write_file(vuln_filename)
+                logger.debug(f"Wrote {vuln_filename}")
 
             if max_loops is not None and loops >= int(max_loops):
                 break
@@ -63,6 +78,9 @@ async def async_main(
             )
             start_index += results_per_page
             loops += 1
+            if len(res.vulnerabilities) == 0:
+                logger.info("No more vulnerabilities to download.")
+                break
     else:
         logger.error("No CVE ID or --all flag provided. Exiting.")
         await nvd.client.close()

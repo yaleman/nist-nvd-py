@@ -18,28 +18,7 @@ CVE_API_URL = "https://services.nvd.nist.gov/rest/json/cves/2.0"
 VALID_CVETAGS = ["disputed", "unsupported-when-assigned", "exclusively-hosted-service"]
 
 
-class NVDAcceptanceLevel(BaseModel):
-    """used in the NVDSources model"""
-
-    description: str
-    last_modified: datetime = Field(
-        alias="lastModified", serialization_alias="lastModified"
-    )
-    model_config = ConfigDict(extra="forbid")
-
-
-class NVDResponse(BaseModel):
-    # JSON Schema: https://csrc.nist.gov/schema/nvd/api/2.0/source_api_json_2.0.schema
-    results_per_page: int = Field(
-        alias="resultsPerPage", serialization_alias="resultsPerPage"
-    )
-    start_index: int = Field(alias="startIndex", serialization_alias="startIndex")
-    total_results: int = Field(alias="totalResults", serialization_alias="totalResults")
-    format: str
-    version: str
-    timestamp: datetime
-    model_config = ConfigDict(extra="forbid")
-
+class WriteFileMixin:
     def write_file(self, filename: str) -> None:
         """Write the model to a JSON file, including None values"""
         with open(filename, "w") as f:
@@ -50,31 +29,47 @@ class NVDResponse(BaseModel):
                     exclude_none=False,
                     exclude_unset=False,
                     exclude_defaults=False,
+                    by_alias=True,  # so it uses the aliases we told it to
                 )
             )
 
 
+class NVDAcceptanceLevel(BaseModel):
+    """used in the NVDSources model"""
+
+    description: str
+    last_modified: datetime = Field(alias="lastModified")
+    model_config = ConfigDict(extra="forbid")
+
+
+class NVDResponse(BaseModel, WriteFileMixin):
+    # JSON Schema: https://csrc.nist.gov/schema/nvd/api/2.0/source_api_json_2.0.schema
+    results_per_page: int = Field(alias="resultsPerPage")
+    start_index: int = Field(alias="startIndex")
+    total_results: int = Field(alias="totalResults")
+    format: str
+    version: str
+    timestamp: datetime
+    model_config = ConfigDict(extra="forbid")
+
+
 class NVDSource(BaseModel):
     name: str
-    contact_email: str = Field(alias="contactEmail", serialization_alias="contactEmail")
-    last_modified: datetime = Field(
-        alias="lastModified", serialization_alias="lastModified"
-    )
+    contact_email: str = Field(alias="contactEmail")
+    last_modified: datetime = Field(alias="lastModified")
     created: datetime
-    source_identifers: List[str] = Field(
-        list(), alias="sourceIdentifiers", serialization_alias="sourceIdentifiers"
-    )
+    source_identifers: List[str] = Field(list(), alias="sourceIdentifiers")
     v4_acceptance_level: Optional[NVDAcceptanceLevel] = Field(
-        None, alias="v4AcceptanceLevel", serialization_alias="v4AcceptanceLevel"
+        None, alias="v4AcceptanceLevel"
     )
     v3_acceptance_level: Optional[NVDAcceptanceLevel] = Field(
-        None, alias="v3AcceptanceLevel", serialization_alias="v3AcceptanceLevel"
+        None, alias="v3AcceptanceLevel"
     )
     v2_acceptance_level: Optional[NVDAcceptanceLevel] = Field(
-        None, alias="v2AcceptanceLevel", serialization_alias="v2AcceptanceLevel"
+        None, alias="v2AcceptanceLevel"
     )
     cwe_acceptance_level: Optional[NVDAcceptanceLevel] = Field(
-        None, alias="cweAcceptanceLevel", serialization_alias="cweAcceptanceLevel"
+        None, alias="cweAcceptanceLevel"
     )
     model_config = ConfigDict(extra="forbid")
 
@@ -90,10 +85,8 @@ class NVDReference(BaseModel):
 
 
 class NVDCPEDeprecation(BaseModel):
-    cpe_name: Optional[str] = Field(
-        None, alias="cpeName", serialization_alias="cpeName"
-    )
-    cpe_name_id: UUID4 = Field(alias="cpeNameId", serialization_alias="cpeNameId")
+    cpe_name: Optional[str] = Field(None, alias="cpeName")
+    cpe_name_id: UUID4 = Field(alias="cpeNameId")
 
     @field_validator("cpe_name", mode="before")
     def validate_cpe_name(cls, value: Optional[str]) -> Optional[str]:
@@ -107,19 +100,13 @@ class NVDCPEDeprecation(BaseModel):
 class NVDCPE(BaseModel):
     deprecated: Optional[bool] = False
     lang: Optional[str] = None
-    cpe_name: Optional[str] = Field(
-        None, alias="cpeName", serialization_alias="cpeName"
-    )
-    cpe_name_id: UUID4 = Field(alias="cpeNameId", serialization_alias="cpeNameId")
-    last_modified: Optional[datetime] = Field(
-        None, alias="lastModified", serialization_alias="lastModified"
-    )
+    cpe_name: Optional[str] = Field(None, alias="cpeName")
+    cpe_name_id: UUID4 = Field(alias="cpeNameId")
+    last_modified: Optional[datetime] = Field(None, alias="lastModified")
     created: Optional[datetime] = None
     titles: List[NVDCPETitle] = []
     refs: List[NVDReference] = []
-    deprecated_by: List[NVDCPEDeprecation] = Field(
-        list(), alias="deprecatedBy", serialization_alias="deprecatedBy"
-    )
+    deprecated_by: List[NVDCPEDeprecation] = Field(list(), alias="deprecatedBy")
     deprecates: List[NVDCPEDeprecation] = []
     model_config = ConfigDict(extra="forbid")
 
@@ -152,47 +139,29 @@ class NVDWeakness(BaseModel):
 
 
 class CVSSV2Data(BaseModel):
-    version: str = Field(alias="version", serialization_alias="version")
-    vector_string: str = Field(alias="vectorString", serialization_alias="vectorString")
-    access_vector: str = Field(alias="accessVector", serialization_alias="accessVector")
-    access_complexity: str = Field(
-        alias="accessComplexity", serialization_alias="accessComplexity"
-    )
-    authentication: str = Field(
-        alias="authentication", serialization_alias="authentication"
-    )
-    confidentiality_impact: str = Field(
-        alias="confidentialityImpact", serialization_alias="confidentialityImpact"
-    )
-    integrity_impact: str = Field(
-        alias="integrityImpact", serialization_alias="integrityImpact"
-    )
-    availability_impact: str = Field(
-        alias="availabilityImpact", serialization_alias="availabilityImpact"
-    )
-    base_score: float = Field(alias="baseScore", serialization_alias="baseScore")
+    version: str = Field(alias="version")
+    vector_string: str = Field(alias="vectorString")
+    access_vector: str = Field(alias="accessVector")
+    access_complexity: str = Field(alias="accessComplexity")
+    authentication: str = Field(alias="authentication")
+    confidentiality_impact: str = Field(alias="confidentialityImpact")
+    integrity_impact: str = Field(alias="integrityImpact")
+    availability_impact: str = Field(alias="availabilityImpact")
+    base_score: float = Field(alias="baseScore")
     model_config = ConfigDict(extra="forbid")
 
 
 class cvssMetricV2(BaseModel):
     source: str
     type: str
-    cvss_data: CVSSV2Data = Field(alias="cvssData", serialization_alias="cvssData")
-    base_severity: str = Field(alias="baseSeverity", serialization_alias="baseSeverity")
-    exploitability_score: float = Field(
-        alias="exploitabilityScore", serialization_alias="exploitabilityScore"
-    )
-    impact_score: float = Field(alias="impactScore", serialization_alias="impactScore")
-    ac_insuf_info: bool = Field(alias="acInsufInfo", serialization_alias="acInsufInfo")
-    obtain_all_privilege: bool = Field(
-        alias="obtainAllPrivilege", serialization_alias="obtainAllPrivilege"
-    )
-    obtain_user_privilege: bool = Field(
-        alias="obtainUserPrivilege", serialization_alias="obtainUserPrivilege"
-    )
-    obtain_other_privilege: bool = Field(
-        alias="obtainOtherPrivilege", serialization_alias="obtainOtherPrivilege"
-    )
+    cvss_data: CVSSV2Data = Field(alias="cvssData")
+    base_severity: str = Field(alias="baseSeverity")
+    exploitability_score: float = Field(alias="exploitabilityScore")
+    impact_score: float = Field(alias="impactScore")
+    ac_insuf_info: bool = Field(alias="acInsufInfo")
+    obtain_all_privilege: bool = Field(alias="obtainAllPrivilege")
+    obtain_user_privilege: bool = Field(alias="obtainUserPrivilege")
+    obtain_other_privilege: bool = Field(alias="obtainOtherPrivilege")
     user_interaction_required: Optional[bool] = Field(
         None,
         alias="userInteractionRequired",
@@ -205,105 +174,89 @@ class cvssMetricV2(BaseModel):
 class cvssMetricV3(BaseModel):
     source: Optional[str] = None
     type: Optional[str] = None
-    exploitability_score: float = Field(
-        alias="exploitabilityScore", serialization_alias="exploitabilityScore"
-    )
-    impact_score: float = Field(alias="impactScore", serialization_alias="impactScore")
-    cvss_data: Dict[str, Any] = Field(alias="cvssData", serialization_alias="cvssData")
+    exploitability_score: float = Field(alias="exploitabilityScore")
+    impact_score: float = Field(alias="impactScore")
+    cvss_data: Dict[str, Any] = Field(alias="cvssData")
     model_config = ConfigDict(extra="forbid")
 
 
 class cvssMetricV4(BaseModel):
     source: str
     type: str
-    cvss_data: Dict[str, Any] = Field(alias="cvssData", serialization_alias="cvssData")
+    cvss_data: Dict[str, Any] = Field(alias="cvssData")
 
     model_config = ConfigDict(extra="forbid")
 
 
 class NVDMetrics(BaseModel):
-    cvss_metric_v2: Optional[List[cvssMetricV2]] = Field(
-        None, alias="cvssMetricV2", serialization_alias="cvssMetricV2"
-    )
-    cvss_metric_v3: Optional[List[cvssMetricV3]] = Field(
-        None, alias="cvssMetricV3", serialization_alias="cvssMetricV3"
-    )
-    cvss_metric_v30: Optional[List[cvssMetricV3]] = Field(
-        None, alias="cvssMetricV30", serialization_alias="cvssMetricV30"
-    )
-    cvss_metric_v31: Optional[List[cvssMetricV3]] = Field(
-        None, alias="cvssMetricV31", serialization_alias="cvssMetricV31"
-    )
-    cvss_metric_v4: Optional[List[cvssMetricV4]] = Field(
-        None, alias="cvssMetricV4", serialization_alias="cvssMetricV4"
-    )
-    cvss_metric_v40: Optional[List[cvssMetricV4]] = Field(
-        None, alias="cvssMetricV40", serialization_alias="cvssMetricV40"
-    )
+    cvss_metric_v2: Optional[List[cvssMetricV2]] = Field(None, alias="cvssMetricV2")
+    cvss_metric_v3: Optional[List[cvssMetricV3]] = Field(None, alias="cvssMetricV3")
+    cvss_metric_v30: Optional[List[cvssMetricV3]] = Field(None, alias="cvssMetricV30")
+    cvss_metric_v31: Optional[List[cvssMetricV3]] = Field(None, alias="cvssMetricV31")
+    cvss_metric_v4: Optional[List[cvssMetricV4]] = Field(None, alias="cvssMetricV4")
+    cvss_metric_v40: Optional[List[cvssMetricV4]] = Field(None, alias="cvssMetricV40")
     model_config = ConfigDict(extra="forbid")
 
 
 class VendorComment(BaseModel):
     organization: str
     comment: str
-    last_modified: Optional[datetime] = Field(
-        None, alias="lastModified", serialization_alias="lastModified"
-    )
+    last_modified: Optional[datetime] = Field(None, alias="lastModified")
 
     model_config = ConfigDict(extra="forbid")
 
 
 class CVETags(BaseModel):
-    source_identifier: Optional[str] = Field(
-        None, alias="sourceIdentifier", serialization_alias="sourceIdentifier"
-    )
+    source_identifier: Optional[str] = Field(None, alias="sourceIdentifier")
     tags: List[str] = list()
     model_config = ConfigDict(extra="forbid")
 
 
-class NVDVulnerabilityData(BaseModel):
+class CPEMatch(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    vulnerable: bool
+    criteria: str
+    match_criteria_id: str = Field(alias="matchCriteriaId")
+    version_start_including: Optional[str] = Field(None, alias="versionStartIncluding")
+    version_start_excluding: Optional[str] = Field(None, alias="versionStartExcluding")
+    version_end_including: Optional[str] = Field(None, alias="versionEndIncluding")
+    version_end_excluding: Optional[str] = Field(None, alias="versionEndExcluding")
+
+
+class NVDConfigurationNode(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    operator: str
+    negate: bool
+    cpe_match: List[CPEMatch] = Field(list(), alias="cpeMatch")
+
+
+class NVDConfiguration(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+    operator: Optional[str] = None
+    nodes: List[NVDConfigurationNode] = Field(list())
+
+
+class NVDVulnerabilityData(BaseModel, WriteFileMixin):
     id: Optional[str] = None
-    source_identifier: str = Field(
-        alias="sourceIdentifier", serialization_alias="sourceIdentifier"
-    )
+    source_identifier: str = Field(alias="sourceIdentifier")
     published: datetime
-    last_modified: datetime = Field(
-        alias="lastModified", serialization_alias="lastModified"
-    )
-    vuln_status: str = Field(alias="vulnStatus", serialization_alias="vulnStatus")
-    cve_tags: List[CVETags] = Field(
-        list(), alias="cveTags", serialization_alias="cveTags"
-    )
+    last_modified: datetime = Field(alias="lastModified")
+    vuln_status: str = Field(alias="vulnStatus")
+    cve_tags: List[CVETags] = Field(list(), alias="cveTags")
     descriptions: List[NVDDescription] = []
     references: List[NVDReference] = []
     weaknesses: List[NVDWeakness] = []
-    configurations: List[Dict[str, Any]] = Field(list())
+    configurations: List[NVDConfiguration] = Field(list())
     metrics: Optional[NVDMetrics] = None
-    evaluator_comment: Optional[str] = Field(
-        None, alias="evaluatorComment", serialization_alias="evaluatorComment"
-    )
-    evaluator_solution: Optional[str] = Field(
-        None, alias="evaluatorSolution", serialization_alias="evaluatorSolution"
-    )
-    evaluator_impact: Optional[str] = Field(
-        None, alias="evaluatorImpact", serialization_alias="evaluatorImpact"
-    )
-    vendor_comments: List[VendorComment] = Field(
-        list(), alias="vendorComments", serialization_alias="vendorComments"
-    )
+    evaluator_comment: Optional[str] = Field(None, alias="evaluatorComment")
+    evaluator_solution: Optional[str] = Field(None, alias="evaluatorSolution")
+    evaluator_impact: Optional[str] = Field(None, alias="evaluatorImpact")
+    vendor_comments: List[VendorComment] = Field(list(), alias="vendorComments")
 
-    cisa_exploit_add: Optional[datetime] = Field(
-        None, alias="cisaExploitAdd", serialization_alias="cisaExploitAdd"
-    )
-    cisa_action_due: Optional[datetime] = Field(
-        None, alias="cisaActionDue", serialization_alias="cisaActionDue"
-    )
-    cisa_required_action: Optional[str] = Field(
-        None, alias="cisaRequiredAction", serialization_alias="cisaRequiredAction"
-    )
-    cisa_vulnerability_name: Optional[str] = Field(
-        None, alias="cisaVulnerabilityName", serialization_alias="cisaVulnerabilityName"
-    )
+    cisa_exploit_add: Optional[datetime] = Field(None, alias="cisaExploitAdd")
+    cisa_action_due: Optional[datetime] = Field(None, alias="cisaActionDue")
+    cisa_required_action: Optional[str] = Field(None, alias="cisaRequiredAction")
+    cisa_vulnerability_name: Optional[str] = Field(None, alias="cisaVulnerabilityName")
     model_config = ConfigDict(extra="forbid")
 
 
@@ -392,20 +345,14 @@ class NVD:
         """ """
 
         class ProductRequest(BaseModel):
-            cpe_name_id: Optional[UUID4] = Field(
-                None, alias="cpeNameId", serialization_alias="cpeNameId"
-            )
-            cpe_match_string: Optional[str] = Field(
-                None, alias="cpeMatchString", serialization_alias="cpeMatchString"
-            )
+            cpe_name_id: Optional[UUID4] = Field(None, alias="cpeNameId")
+            cpe_match_string: Optional[str] = Field(None, alias="cpeMatchString")
             keyword_exact_match: Optional[bool] = Field(
                 False,
                 alias="keywordExactMatch",
                 serialization_alias="keywordExactMatch",
             )
-            match_criteria_id: Optional[UUID4] = Field(
-                None, alias="matchCriteriaId", serialization_alias="matchCriteriaId"
-            )
+            match_criteria_id: Optional[UUID4] = Field(None, alias="matchCriteriaId")
 
             @field_validator("cpe_match_string", mode="before")
             def validate_cpe_match_string(cls, value: Optional[str]) -> Optional[str]:
