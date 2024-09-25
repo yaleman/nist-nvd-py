@@ -1,4 +1,5 @@
 from datetime import datetime
+from enum import StrEnum
 import logging
 from pathlib import Path
 from typing import Any, Dict, List, Literal, Optional, Set, Union
@@ -20,6 +21,8 @@ VALID_CVETAGS = ["disputed", "unsupported-when-assigned", "exclusively-hosted-se
 
 
 class WriteFileMixin:
+    """Allows a model to be written to a file easily"""
+
     def model_dump_json(
         self,
         *,
@@ -46,9 +49,9 @@ class WriteFileMixin:
             f.write(
                 self.model_dump_json(
                     indent=4,
-                    exclude_none=False,
+                    exclude_none=True,
                     exclude_unset=False,
-                    exclude_defaults=False,
+                    exclude_defaults=True,
                     by_alias=True,  # so it uses the aliases we told it to
                 )
             )
@@ -97,16 +100,22 @@ class NVDSource(BaseModel):
 class NVDCPETitle(BaseModel):
     title: str
     lang: str
+    model_config = ConfigDict(extra="forbid")
 
 
 class NVDReference(BaseModel):
-    ref: Optional[str] = None
-    type: Optional[str] = None
+    ref: Optional[str] = Field(None)
+    type: Optional[str] = Field(None)
+    source: str
+    url: Optional[str] = Field(None)
+    tags: List[str] = Field(list())
+    model_config = ConfigDict(extra="forbid")
 
 
 class NVDCPEDeprecation(BaseModel):
     cpe_name: Optional[str] = Field(None, alias="cpeName")
     cpe_name_id: UUID4 = Field(alias="cpeNameId")
+    model_config = ConfigDict(extra="forbid")
 
     @field_validator("cpe_name", mode="before")
     def validate_cpe_name(cls, value: Optional[str]) -> Optional[str]:
@@ -243,16 +252,27 @@ class CPEMatch(BaseModel):
     version_end_excluding: Optional[str] = Field(None, alias="versionEndExcluding")
 
 
+class Operator(StrEnum):
+    AND = "AND"
+    OR = "OR"
+
+
 class NVDConfigurationNode(BaseModel):
     model_config = ConfigDict(extra="forbid")
-    operator: str
+    operator: Operator
     negate: bool
     cpe_match: List[CPEMatch] = Field(list(), alias="cpeMatch")
+
+    @field_validator("operator", mode="before")
+    def validate_operator(cls, value: str) -> Operator:
+        if value not in ["AND", "OR"]:
+            raise ValueError("Operator must be one of AND, OR")
+        return Operator(value)
 
 
 class NVDConfiguration(BaseModel):
     model_config = ConfigDict(extra="forbid")
-    operator: Optional[str] = None
+    operator: Optional[Operator] = None
     nodes: List[NVDConfigurationNode] = Field(list())
 
 
