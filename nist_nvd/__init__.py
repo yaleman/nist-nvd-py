@@ -5,6 +5,7 @@ from pathlib import Path
 from typing import Any, Dict, List, Literal, Optional, Set, Union
 
 from aiohttp import ClientTimeout
+from loguru import logger
 from pydantic import UUID4, BaseModel, ConfigDict, Field, field_validator
 from aiohttp.client import ClientSession
 
@@ -44,6 +45,9 @@ class WriteFileMixin:
 
     def write_file(self, filename: str | Path) -> None:
         """Write the model to a JSON file, including None values"""
+        if not Path(filename).parent_exists():
+            logger.debug(f"Parent directory for {filename} doesn't exist!")
+            Path(filename).parent.mkdir(parents=True)
         with open(filename, "w") as f:
             logging.debug(f"writing to {filename}")
             f.write(

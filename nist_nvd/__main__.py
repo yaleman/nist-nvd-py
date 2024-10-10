@@ -34,6 +34,11 @@ async def async_main(
             vuln_filename = Path(
                 "data/vulnerabilities/{}.json".format(vulnerability.cve.id)
             )
+
+            if not vuln_filename.parent_exists():
+                logger.debug(f"Parent directory for {vuln_filename} doesn't exist!")
+                vuln_filename.parent.mkdir(parents=True)
+
             if vuln_filename.exists():
                 logger.warning(f"File {vuln_filename} already exists, skipping")
                 continue
@@ -58,6 +63,9 @@ async def async_main(
         while res:
             # write out the results, doing this for the "previous" run, which includes the initial run
             for vulnerability in res.vulnerabilities:
+                if not vuln_filename.parent_exists():
+                logger.debug(f"Parent directory for {vuln_filename} doesn't exist!")
+                vuln_filename.parent.mkdir(parents=True)
                 vuln_filename = Path(
                     "data/vulnerabilities/{}.json".format(vulnerability.cve.id)
                 )
