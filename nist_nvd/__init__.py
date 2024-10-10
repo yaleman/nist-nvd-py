@@ -46,7 +46,7 @@ class WriteFileMixin:
     def write_file(self, filename: str | Path) -> None:
         """Write the model to a JSON file, including None values"""
         if not Path(filename).parent.exists():
-            logger.debug(f"Parent directory for {filename} doesn't exist!")
+            logger.debug(f"Parent directory for {filename} doesn't exist, creating...")
             Path(filename).parent.mkdir(parents=True)
         with open(filename, "w") as f:
             logging.debug(f"writing to {filename}")
