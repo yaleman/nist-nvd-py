@@ -110,7 +110,7 @@ class NVDCPETitle(BaseModel):
 class NVDReference(BaseModel):
     ref: Optional[str] = Field(None)
     type: Optional[str] = Field(None)
-    source: str
+    source: Optional[str] = Field(None)
     url: Optional[str] = Field(None)
     tags: List[str] = Field(list())
     model_config = ConfigDict(extra="forbid")
