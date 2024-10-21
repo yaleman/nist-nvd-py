@@ -303,6 +303,13 @@ class NVDVulnerabilityData(BaseModel, WriteFileMixin):
     cisa_vulnerability_name: Optional[str] = Field(None, alias="cisaVulnerabilityName")
     model_config = ConfigDict(extra="forbid")
 
+    def get_description(self, lang: str) -> Optional[str]:
+        """if it can find a description in the specified language, it will return it"""
+        for desc in self.descriptions:
+            if desc.lang == lang:
+                return desc.value
+        return None
+
 
 class NVDVulnerability(BaseModel):
     cve: NVDVulnerabilityData
