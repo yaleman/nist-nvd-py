@@ -239,7 +239,7 @@ wheels = [
 
 [[package]]
 name = "nist-nvd"
-version = "0.1.2"
+version = "0.1.4"
 source = { editable = "." }
 dependencies = [
     { name = "aiohttp" },

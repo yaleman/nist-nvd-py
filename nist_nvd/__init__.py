@@ -131,17 +131,25 @@ class NVDCPEDeprecation(BaseModel):
 
 
 class NVDCPE(BaseModel):
-    deprecated: Optional[bool] = False
-    lang: Optional[str] = None
-    cpe_name: Optional[str] = Field(None, alias="cpeName")
     cpe_name_id: UUID4 = Field(alias="cpeNameId")
-    last_modified: Optional[datetime] = Field(None, alias="lastModified")
+    cpe_name: Optional[str] = Field(None, alias="cpeName")
     created: Optional[datetime] = None
-    titles: List[NVDCPETitle] = []
-    refs: List[NVDReference] = []
     deprecated_by: List[NVDCPEDeprecation] = Field(list(), alias="deprecatedBy")
+    deprecated: Optional[bool] = False
     deprecates: List[NVDCPEDeprecation] = []
+    lang: Optional[str] = None
+    last_modified: Optional[datetime] = Field(None, alias="lastModified")
+    refs: List[NVDReference] = []
+    titles: List[NVDCPETitle] = []
+
     model_config = ConfigDict(extra="forbid")
+
+    def get_title(self, lang="en") -> Optional[str]:
+        """if it can find a title in the specified language, it will return it"""
+        for title in self.titles:
+            if title.lang == lang:
+                return title.title
+        return None
 
 
 class NVDProduct(BaseModel):
