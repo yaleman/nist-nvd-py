@@ -144,7 +144,7 @@ class NVDCPE(BaseModel):
 
     model_config = ConfigDict(extra="forbid")
 
-    def get_title(self, lang="en") -> Optional[str]:
+    def get_title(self, lang: str = "en") -> Optional[str]:
         """if it can find a title in the specified language, it will return it"""
         for title in self.titles:
             if title.lang == lang:

@@ -1,6 +1,8 @@
 #!python
 
 import asyncio
+from datetime import datetime
+
 from pathlib import Path
 import sys
 from typing import Optional
@@ -8,6 +10,7 @@ import click
 import logging
 
 from nist_nvd import NVD
+from nist_nvd.validator import validate_iso_format
 
 
 def get_filename(start_index: int, results_per_page: int) -> str:
@@ -22,13 +25,20 @@ async def async_main(
     results_per_page: int,
     max_loops: Optional[int],
     logger: logging.Logger,
+    pub_start_date: Optional[datetime],
+    pub_end_date: Optional[datetime],
 ) -> int:
     """main loop of the thing.."""
     nvd = NVD()
     if cve_id is not None:
         logger.info(f"Searching for CVE with ID: {cve_id}")
+
         res = await nvd.get_vulnerabilities(
-            cve_id=cve_id, start_index=0, results_per_page=1
+            cve_id=cve_id,
+            start_index=0,
+            results_per_page=1,
+            pub_start_date=pub_start_date,
+            pub_end_date=pub_end_date,
         )
         for vulnerability in res.vulnerabilities:
             vuln_filename = Path(
@@ -97,6 +107,8 @@ async def async_main(
 @click.option("-s", "--start-index", help="Start at this offset", default=0)
 @click.option("-r", "--results-per-page", default=1000, help="Results per page")
 @click.option("-d", "--debug", is_flag=True, help="Enable debug logging")
+@click.option("--pub-start-date", help="Start date for published CVE")
+@click.option("--pub-end-date", help="Start date for published CVE")
 @click.option(
     "--max-loops", default=None, help="If you're pulling all, how many iterations"
 )
@@ -107,6 +119,8 @@ def main(
     results_per_page: int = 1000,
     max_loops: Optional[int] = None,
     debug: bool = False,
+    pub_start_date: Optional[str] = None,
+    pub_end_date: Optional[str] = None,
 ) -> None:
     """Download CVE data"""
 
@@ -118,6 +132,26 @@ def main(
     logger = logging.getLogger(name=__file__.split("/")[-2])
     logger.setLevel(logging.DEBUG if debug else logging.INFO)
 
+    if pub_start_date is not None:
+        pub_start_date_checked = validate_iso_format(pub_start_date, start=True)
+        if pub_start_date_checked is None:
+            logger.error(
+                "Start date is not in ISO format, please ensure it matches YYYY-MM-DDTHH:MM:SSZ"
+            )
+            sys.exit(1)
+        if pub_end_date is not None:
+            pub_end_date_checked = validate_iso_format(pub_end_date, start=False)
+            if pub_end_date_checked is None:
+                logger.error(
+                    "End date is not in ISO format, please ensure it matches YYYY-MM-DDTHH:MM:SSZ"
+                )
+                sys.exit(1)
+        else:
+            logger.error("End date is required if start date is provided")
+    elif pub_end_date is not None:
+        logger.error("Start date is required if end date is provided")
+        sys.exit(1)
+
     loop = asyncio.new_event_loop()
     res = loop.run_until_complete(
         async_main(
@@ -127,6 +161,8 @@ def main(
             results_per_page=results_per_page,
             max_loops=max_loops,
             logger=logger,
+            pub_start_date=pub_start_date_checked,
+            pub_end_date=pub_end_date_checked,
         )
     )
     sys.exit(res)
