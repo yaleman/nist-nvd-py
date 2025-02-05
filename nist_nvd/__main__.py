@@ -57,11 +57,18 @@ async def async_main(
             if max_loops is not None
             else ""
         )
+        if pub_start_date is not None and pub_end_date is not None:
+            date_string = f" between {pub_start_date} and {pub_end_date}"
+        else:
+            date_string = ""
         logger.info(
-            f"Downloading all CVEs, starting at record {start_index} {results_per_page} at a time{possible_max_loops}.",
+            f"Downloading all CVEs, starting at record {start_index}, {results_per_page} at a time{possible_max_loops}.{date_string}"
         )
         res = await nvd.get_vulnerabilities(
-            start_index=start_index, results_per_page=results_per_page
+            start_index=start_index,
+            results_per_page=results_per_page,
+            pub_start_date=pub_start_date,
+            pub_end_date=pub_end_date,
         )
         loops = 1
 

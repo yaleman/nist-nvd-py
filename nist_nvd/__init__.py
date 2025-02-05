@@ -1,3 +1,4 @@
+import asyncio
 from datetime import datetime
 from enum import StrEnum
 import logging
@@ -623,12 +624,20 @@ class NVD:
                     )
                 )
             query["cvssV4Severity"] = cvss_v4_severity
-        async with self.client.get(
-            CVE_API_URL, headers=headers, params=query
-        ) as response:
-            response.raise_for_status()
-            text = await response.text()
+
+        attempts = 1
+        while attempts <= 3:
             try:
-                return NVDVulnerabilities.model_validate_json(text)
-            except Exception as error:
-                raise error
+                async with self.client.get(
+                    CVE_API_URL, headers=headers, params=query
+                ) as response:
+                    response.raise_for_status()
+                    text = await response.text()
+                    try:
+                        return NVDVulnerabilities.model_validate_json(text)
+                    except Exception as error:
+                        raise error
+            except asyncio.TimeoutError:
+                attempts += 1
+                logger.error(f"Timeout, attempt {attempts}")
+        raise asyncio.TimeoutError("Timeout error after 3 attempts")
