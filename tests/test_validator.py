@@ -3,8 +3,10 @@ from nist_nvd.validator import validate_iso_format
 
 
 def test_validate_iso_format() -> None:
-    assert validate_iso_format("2021-01-01", start=True) is None
-    assert validate_iso_format("2021-01-01", start=False) is None
+    assert validate_iso_format("2021-01-01", start=True) == datetime(2021, 1, 1, 0, 0)
+    assert validate_iso_format("2021-01-01", start=False) == datetime(
+        2021, 1, 1, 23, 59, 59
+    )
     assert validate_iso_format("2021-01-01T00:00:00Z", start=True) == datetime(
         2021, 1, 1, 0, 0, 0
     )

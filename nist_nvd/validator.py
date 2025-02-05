@@ -3,7 +3,7 @@ from typing import Optional
 
 
 def validate_iso_format(date_str: str, start: bool) -> Optional[datetime]:
-    if len(date_str.split("T")) == 0:
+    if len(date_str.split("T")) == 1:
         if start:
             date_str = date_str + "T00:00:00Z"
         else:
