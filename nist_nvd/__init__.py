@@ -9,6 +9,7 @@ from aiohttp import ClientTimeout
 from loguru import logger
 from pydantic import UUID4, BaseModel, ConfigDict, Field, field_validator
 from aiohttp.client import ClientSession
+import aiohttp.client_exceptions
 
 from .config import Config
 
@@ -640,4 +641,11 @@ class NVD:
             except asyncio.TimeoutError:
                 attempts += 1
                 logger.error(f"Timeout, attempt {attempts}")
+            except aiohttp.client_exceptions.ClientResponseError as error:
+                if error.status == 503:
+                    logger.error("Service unavailable (threw a 503), waiting 5 seconds")
+                    await asyncio.sleep(5)
+                else:
+                    logger.error(f"Error: {error}, attempt {attempts}")
+                attempts += 1
         raise asyncio.TimeoutError("Timeout error after 3 attempts")
