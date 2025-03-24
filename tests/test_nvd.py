@@ -8,7 +8,7 @@ from contextlib import contextmanager
 from nist_nvd.config import Config
 
 
-@pytest.mark.asyncio
+@pytest.mark.asyncio(loop_scope="function")
 async def test_get() -> None:
     nvd = NVD()
     assert nvd.api_key == os.getenv("NVD_API_KEY")

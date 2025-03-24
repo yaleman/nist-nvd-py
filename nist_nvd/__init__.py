@@ -1,8 +1,8 @@
 import asyncio
 from datetime import datetime
-from enum import StrEnum
 import logging
 from pathlib import Path
+import sys
 from typing import Any, Dict, List, Literal, Optional, Set, Union
 
 from aiohttp import ClientTimeout
@@ -10,6 +10,16 @@ from loguru import logger
 from pydantic import UUID4, BaseModel, ConfigDict, Field, field_validator
 from aiohttp.client import ClientSession
 import aiohttp.client_exceptions
+
+
+if sys.version_info >= (3, 11):
+    from enum import StrEnum
+else:
+    from enum import Enum
+
+    class StrEnum(str, Enum):
+        pass
+
 
 from .config import Config
 
@@ -29,23 +39,23 @@ class WriteFileMixin:
     def model_dump_json(
         self,
         *,
-        indent: int | None = None,
+        indent: Optional[int] = None,
         include: Union[Set[int], Set[str], Dict[int, Any], Dict[str, Any], None] = None,
         exclude: Union[Set[int], Set[str], Dict[int, Any], Dict[str, Any], None] = None,
-        context: Any | None = None,
+        context: Optional[Any] = None,
         by_alias: bool = False,
         exclude_unset: bool = False,
         exclude_defaults: bool = False,
         exclude_none: bool = False,
         round_trip: bool = False,
-        warnings: bool | Literal["none", "warn", "error"] = True,
+        warnings: Union[bool, Literal["none", "warn", "error"]] = True,
         serialize_as_any: bool = False,
     ) -> str:
         raise NotImplementedError(
             "This method must be implemented in the subclass by pydantic.BaseModel"
         )
 
-    def write_file(self, filename: str | Path) -> None:
+    def write_file(self, filename: Union[str, Path]) -> None:
         """Write the model to a JSON file, including None values"""
         if not Path(filename).parent.exists():
             logger.debug(f"Parent directory for {filename} doesn't exist, creating...")
