@@ -15,3 +15,5 @@ build/
 example*.json
 tests/example*.json
 data/*
+.coverage
+coverage.json
