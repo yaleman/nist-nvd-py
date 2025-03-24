@@ -7,3 +7,6 @@ coveralls:
     uv run coverage run -m pytest -s
     uv run coverage json -o coverage.json
     uv run coveralls
+publish: check
+    uv build --force-pep517
+    ub publish --username __token__ --no-cache
