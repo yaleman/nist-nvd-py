@@ -8,5 +8,6 @@ coveralls:
     uv run coverage json -o coverage.json
     uv run coveralls
 publish: check
+    rm -rf ./dist/*
     uv build --force-pep517
-    ub publish --username __token__ --no-cache
+    uv publish
