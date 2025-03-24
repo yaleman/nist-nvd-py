@@ -31,3 +31,9 @@ package = true
 
 [tool.pytest.ini_options]
 asyncio_default_fixture_loop_scope = "function"
+
+[dependency-groups]
+dev = [
+    "coverage>=7.7.1",
+    "coveralls>=4.0.1",
+]

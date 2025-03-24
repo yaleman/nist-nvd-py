@@ -34,6 +34,7 @@ def test_nvd_products_parser() -> None:
     response = NVDCPEs.model_validate_json(file)
     assert response.results_per_page == 1000
     response.model_dump_json(indent=4)
+    response.products[0].cpe.get_title("en")
 
 
 def test_nvd_vulnerabilities_parser() -> None:
@@ -41,7 +42,9 @@ def test_nvd_vulnerabilities_parser() -> None:
         if filename.startswith("example.vulnerabilities"):
             print(f"Checking {filename}")
             file = open(f"tests/{filename}").read()
-            NVDVulnerabilities.model_validate_json(file)
+            data = NVDVulnerabilities.model_validate_json(file)
+            data.vulnerabilities[0].cve.get_description("en")
+            data.vulnerabilities[0].cve.get_description("fr")
         else:
             print(f"Skipping {filename}", file=sys.stderr)
 
